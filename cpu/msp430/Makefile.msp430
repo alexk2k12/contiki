@@ -146,7 +146,13 @@ ifndef CFLAGSNO
 CFLAGSNO = -Wall -mmcu=$(CC_MCU) $(CFLAGSWERROR)
 endif
 #CFLAGS  += -Os -fno-strict-aliasing
+
+ifeq ($(TARGET),olimexino)
+CFLAGS  += -c -Wall -std=c99 -fpack-struct
+else
 CFLAGS  += -c -fstack-check -O2 -Wall -std=c99 -fpack-struct -fdata-sections -ffunction-sections
+endif
+
 LDFLAGS += -mmcu=$(CC_MCU) --gc-sections -Wl,-Map=contiki-$(TARGET).map
 
 ### These flags can reduce the code size and RAM usage with up to 10%

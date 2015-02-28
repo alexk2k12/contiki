@@ -1,0 +1,78 @@
+ifndef CONTIKI
+  $(error CONTIKI not defined! You must specify where CONTIKI resides!)
+endif
+
+CONTIKI_TARGET_SOURCEFILES += infomem.c pwm.c #at25f512b.c adc.c xmem.c
+CONTIKI_TARGET_SOURCEFILES += node-id-olimexino.c #olimexino-lpm.c
+
+#ifdef OLIMEXINO_USE_MRF49XA
+#undef OLIMEXINO_USE_MRF49XA
+#endif
+
+ifdef OLIMEXINO_USE_MRF49XA
+CONTIKI_TARGET_SOURCEFILES += mrf49xa.c mrf49xa_arch.c
+endif
+
+ifdef OLIMEXINO_USE_BUTTON_SENSOR
+CONTIKI_TARGET_SOURCEFILES += sensors.c button-sensor.c
+endif
+
+#Make sure USBA code is included.
+OLIMEXINO_USE_USB=1
+
+ifdef OLIMEXINO_USE_USB
+#PROJECT_SOURCEFILES += wdt.c console.c utils.c usb_printf.c
+PROJECT_SOURCEFILES += HAL_PMM.c HAL_TLV.c HAL_UCS.c
+PROJECT_SOURCEFILES += usbConstructs.c usbEventHandling.c
+#PROJECT_SOURCEFILES += UsbHid.c UsbHidReq.c
+#PROJECT_SOURCEFILES += UsbMscReq.c UsbMscScsi.c UsbMscStateMachine.c
+#PROJECT_SOURCEFILES += UsbPHDC.c
+PROJECT_SOURCEFILES += dma.c usb.c UsbCdc.c UsbIsr.c descriptors.c
+
+PROJECT_SOURCEFILES += usb0-putchar.c #CONTIKI_TARGET_SOURCEFILES += usb0-putchar.c
+endif
+
+CLEAN += symbols.c symbols.h
+
+#ARCH=spi.c sensors.c
+
+ifndef OLIMEXINO_USE_USB 	
+ARCH = uart1.c uart1-putchar.c
+endif
+
+CONTIKI_TARGET_DIRS += . dev 
+
+ifdef OLIMEXINO_USE_USB
+CONTIKI_TARGET_DIRS += F5xx_F6xx_Core_Lib 
+CONTIKI_TARGET_DIRS += USB USB/USB_config USB/USB_API/USB_Common 
+CONTIKI_TARGET_DIRS += USB/USB_API/USB_CDC_API USB/USB_API/USB_HID_API 
+CONTIKI_TARGET_DIRS += USB/USB_API/USB_MSC_API USB/USB_API/USB_PHDC_API
+endif
+
+ifndef CONTIKI_TARGET_MAIN
+CONTIKI_TARGET_MAIN = contiki-olimexino-main.c
+endif
+
+SMALL=0 #1 disable!
+CONTIKI_TARGET_SOURCEFILES += $(ARCH) 
+
+ifdef OLIMEXINO_MCU
+MCU=$(OLIMEXINO_MCU)
+else
+MCU=msp430f5510
+endif
+
+include $(CONTIKI)/cpu/msp430/Makefile.msp430
+
+contiki-$(TARGET).a: ${addprefix $(OBJECTDIR)/,symbols.o}
+	$(AR) rcf $@ $^
+
+%.hex: %.ihex
+	mv $< $@
+
+%.upload: %.hex
+	python -m msp430.bsl5.hid -P $< --password=$< -i ihex
+#	mspdebug tilib -d /dev/ttyACM0 "prog $<"
+
+%.upload-clean: %.hex
+	msp430flasher -n msp430x5308 -w $< -v -z [VCC]
