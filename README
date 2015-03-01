@@ -16,7 +16,9 @@ Planned:
  - Add support for the MOD-MRF24J40 IEEE 802.15.4 radio.
  
  To compile:
- <code>make hello-world.ihex</code>
+ ```
+ make hello-world.ihex
+ ```
  
  To upload (make sure the python bsl library is installed).
  <code>make hello-world.upload</code>
