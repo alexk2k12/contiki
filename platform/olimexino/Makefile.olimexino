@@ -76,3 +76,11 @@ contiki-$(TARGET).a: ${addprefix $(OBJECTDIR)/,symbols.o}
 
 %.upload-clean: %.hex
 	msp430flasher -n msp430x5308 -w $< -v -z [VCC]
+
+# Use Tmote sky tools for comm.
+#Log into ttyacm0
+login:
+	../../tools/sky/serialdump-linux /dev/ttyACM0
+# serial dump log into a specified serial device.
+%.login:
+	../../tools/sky/serialdump-linux /dev/$(subst .login,,$@)
