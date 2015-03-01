@@ -15,16 +15,22 @@ Changes:
 Planned:
  - Add support for the MOD-MRF24J40 IEEE 802.15.4 radio.
  
- To compile:
+To compile:
+```
+make hello-world.ihex
  ```
- make hello-world.ihex
- ```
- 
- To upload (make sure the python bsl library is installed).
- <code>make hello-world.upload</code>
- 
- To login to serial port:
- <code> make login</code>
- 
- Or specify the port:
- <code> make [port].login
+
+To upload (make sure the python bsl library is installed).
+```
+make hello-world.upload
+```
+
+To login to serial port:
+```
+make login
+```
+
+Or specify the port:
+```
+make [port].login
+```
