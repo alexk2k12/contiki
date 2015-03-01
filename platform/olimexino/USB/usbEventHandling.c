@@ -34,6 +34,7 @@
  * Event-handling placeholder functions.
  * All functios are called in interrupt context.
  */
+#include <serial-line.h>
 
 #include "USB_API/USB_Common/device.h"
 #include "USB_API/USB_Common/types.h"
@@ -60,7 +61,12 @@
 #endif
 
 //These variables are only example, they are not needed for stack
-extern volatile BYTE bCDCDataReceived_event;    //data received event
+//extern volatile BYTE bCDCDataReceived_event;    //data received event
+#ifdef SERIAL_LINE_CONF_BUFSIZE
+#define BUFSIZE SERIAL_LINE_CONF_BUFSIZE
+#else /* SERIAL_LINE_CONF_BUFSIZE */
+#define BUFSIZE 128
+#endif /* SERIAL_LINE_CONF_BUFSIZE */
 
 /*
  * If this function gets executed, it's a sign that the output of the USB PLL has failed.
@@ -81,14 +87,17 @@ extern volatile uint8_t usb_printf_state;
 BYTE USB_handleVbusOnEvent ()
 {
     //TO DO: You can place your code here
-
     //We switch on USB and connect to the BUS
+
     if (USB_enable() == kUSB_succeed){
         USB_reset();
         USB_connect();                          //generate rising edge on DP -> the host enumerates our device as full speed device
         //usb_printf_state = USB_ENABLED;
     }
+
+
     return (TRUE);                              //return TRUE to wake the main loop (in the case the CPU slept before interrupt)
+
 }
 
 /*
@@ -162,8 +171,14 @@ BYTE USB_handleEnumCompleteEvent ()
 BYTE USBCDC_handleDataReceived (BYTE intfNum)
 {
     //TO DO: You can place your code here
+    char msg[BUFSIZE];
+    //Get the next piece of the string
+    int msg_len = cdcReceiveDataInBuffer((BYTE*)msg,BUFSIZE - 1,CDC0_INTFNUM);
+    msg[msg_len] = 0;
 
-    bCDCDataReceived_event = TRUE;
+    int i;
+    for(i=0;i<msg_len;i++) serial_line_input_byte(msg[i]);
+    //bCDCDataReceived_event = TRUE;
 
     return (TRUE);                              //return FALSE to go asleep after interrupt (in the case the CPU slept before
                                                 //interrupt)

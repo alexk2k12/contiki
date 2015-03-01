@@ -148,7 +148,8 @@ endif
 #CFLAGS  += -Os -fno-strict-aliasing
 
 ifeq ($(TARGET),olimexino)
-CFLAGS  += -c -Wall -std=c99 -fpack-struct
+# Don't use fstack-check, and optimize for code size.
+CFLAGS  += -c -Os -Wall -std=c99 -fpack-struct -fdata-sections -ffunction-sections
 else
 CFLAGS  += -c -fstack-check -O2 -Wall -std=c99 -fpack-struct -fdata-sections -ffunction-sections
 endif
