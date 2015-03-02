@@ -115,6 +115,7 @@ PROCESS_THREAD(sensors_process, ev, data)
   num_sensors = i;
 
 
+
   while(1) {
 	 // P1OUT |= 0x40;
     PROCESS_WAIT_EVENT();

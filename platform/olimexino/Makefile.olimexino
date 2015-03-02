@@ -13,6 +13,9 @@ ifdef OLIMEXINO_USE_MRF49XA
 CONTIKI_TARGET_SOURCEFILES += mrf49xa.c mrf49xa_arch.c
 endif
 
+#Make sure button is included
+OLIMEXINO_USE_BUTTON_SENSOR=1
+
 ifdef OLIMEXINO_USE_BUTTON_SENSOR
 CONTIKI_TARGET_SOURCEFILES += sensors.c button-sensor.c
 endif
@@ -83,4 +86,4 @@ login:
 	../../tools/sky/serialdump-linux /dev/ttyACM0
 # serial dump log into a specified serial device.
 %.login:
-	../../tools/sky/serialdump-linux /dev/$(subst .login,,$@)
+	../../tools/sky/serialdump-linux /dev/tty%

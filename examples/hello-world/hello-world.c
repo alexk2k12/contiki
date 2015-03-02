@@ -39,6 +39,7 @@
 
 #include "contiki.h"
 #include "serial-line.h"
+#include "dev/button-sensor.h"
 
 #include <stdio.h> /* For printf() */
 /*---------------------------------------------------------------------------*/
@@ -48,9 +49,14 @@ AUTOSTART_PROCESSES(&hello_world_process);
 PROCESS_THREAD(hello_world_process, ev, data)
 {
   PROCESS_BEGIN();
+
+  SENSORS_ACTIVATE(button_sensor);
+
   while(1) {
+    printf("wait...\n");
     PROCESS_WAIT_EVENT();
-    printf("data: '%s'\n", data);
+    if(ev == serial_line_event_message) printf("data: '%s'\n", data);
+    else printf("button pressed!\n");
   }
   PROCESS_END();
 }

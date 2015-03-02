@@ -45,9 +45,10 @@
 #define PRINTF(...) do {} while (0)
 #endif
 
+#define USE_BUTTON_SENSOR=1
 #ifdef USE_BUTTON_SENSOR
 #include "dev/button-sensor.h"
-//SENSORS(&button_sensor);
+SENSORS(&button_sensor);
 #endif
 
 #define NODEID_RESTORE_RETRY 8
@@ -342,6 +343,7 @@ int main(void) {
     process_init();
     process_start(&etimer_process, NULL);
     ctimer_init();
+    process_start(&sensors_process,NULL);
 
 	uint8_t i;
 	for(i=0;i<4;i++){
