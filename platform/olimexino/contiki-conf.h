@@ -1,0 +1,117 @@
+#ifndef CONTIKI_CONF_H
+#define CONTIKI_CONF_H
+
+#include "platform-conf.h"
+
+#ifdef USE_MRF49XA
+#undef USE_MRF49XA
+#endif
+
+#ifndef NETSTACK_CONF_MAC
+/* #define NETSTACK_CONF_MAC     csma_driver */
+#define NETSTACK_CONF_MAC     nullmac_driver
+#endif /* NETSTACK_CONF_MAC */
+
+#ifndef NETSTACK_CONF_RDC
+/* #define NETSTACK_CONF_RDC     contikimac_driver */
+#define NETSTACK_CONF_RDC     nullrdc_driver
+#endif /* NETSTACK_CONF_RDC */
+
+#ifndef NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE
+#define NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE 8
+#endif /* NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE */
+
+#ifndef NETSTACK_CONF_RADIO
+#ifdef USE_MRF49XA
+#define NETSTACK_CONF_RADIO   mrf49xa_driver //nullradio_driver //
+#else
+#define NETSTACK_CONF_RADIO   nullradio_driver //nullradio_driver //
+#endif
+#endif /* NETSTACK_CONF_RADIO */
+
+#ifndef NETSTACK_CONF_FRAMER
+#define NETSTACK_CONF_FRAMER  framer_802154
+#endif /* NETSTACK_CONF_FRAMER */
+
+#ifndef SERIAL_LINE_INPUT_ENABLED
+#define SERIAL_LINE_INPUT_ENABLED 1
+#endif /* SERIAL_LINE_INPUT_ENABLED */
+
+#ifndef SERIAL_LINE_OUTPUT_ENABLED
+#define SERIAL_LINE_OUTPUT_ENABLED 1
+#endif /* SERIAL_LINE_OUTPUT_ENABLED */
+
+/* Network setup for non-IPv6 (rime). */
+#define NETSTACK_CONF_NETWORK rime_driver
+
+#define COLLECT_CONF_ANNOUNCEMENTS       1
+#define CXMAC_CONF_ANNOUNCEMENTS         0
+#define XMAC_CONF_ANNOUNCEMENTS          0
+#define CONTIKIMAC_CONF_ANNOUNCEMENTS    0
+
+#define CONTIKIMAC_CONF_COMPOWER         1
+#define XMAC_CONF_COMPOWER               1
+#define CXMAC_CONF_COMPOWER              1
+
+#ifndef COLLECT_NEIGHBOR_CONF_MAX_COLLECT_NEIGHBORS
+#define COLLECT_NEIGHBOR_CONF_MAX_COLLECT_NEIGHBORS     2
+#endif /* COLLECT_NEIGHBOR_CONF_MAX_COLLECT_NEIGHBORS */
+
+#ifndef QUEUEBUF_CONF_NUM
+#define QUEUEBUF_CONF_NUM                6
+#endif /* QUEUEBUF_CONF_NUM */
+
+#ifndef TIMESYNCH_CONF_ENABLED
+#define TIMESYNCH_CONF_ENABLED           0
+#endif /* TIMESYNCH_CONF_ENABLED */
+
+#if TIMESYNCH_CONF_ENABLED
+/* CC2520 SDF timestamps must be on if timesynch is enabled. */
+#undef CC2520_CONF_SFD_TIMESTAMPS
+#define CC2520_CONF_SFD_TIMESTAMPS       1
+#endif /* TIMESYNCH_CONF_ENABLED */
+
+#define PACKETBUF_CONF_ATTRS_INLINE 1
+
+#ifndef MRF49XA_DEF_BAND
+#define MRF49XA_DEF_BAND					MRF49XA_BAND_868
+#endif
+
+#ifndef MRF49XA_DEF_CHANNEL
+#define MRF49XA_DEF_CHANNEL              	12
+#endif
+
+#define CONTIKIMAC_CONF_BROADCAST_RATE_LIMIT 0
+
+#define IEEE802154_CONF_PANID       0xABCD
+
+#define SHELL_VARS_CONF_RAM_BEGIN 0x1100
+#define SHELL_VARS_CONF_RAM_END 0x2000
+
+#define PROFILE_CONF_ON 0
+#define ENERGEST_CONF_ON 1
+
+#define ELFLOADER_CONF_TEXT_IN_ROM 0
+#ifndef ELFLOADER_CONF_DATAMEMORY_SIZE
+#define ELFLOADER_CONF_DATAMEMORY_SIZE 0x400
+#endif /* ELFLOADER_CONF_DATAMEMORY_SIZE */
+#ifndef ELFLOADER_CONF_TEXTMEMORY_SIZE
+#define ELFLOADER_CONF_TEXTMEMORY_SIZE 0x800
+#endif /* ELFLOADER_CONF_TEXTMEMORY_SIZE */
+
+#define AODV_COMPLIANCE
+#define AODV_NUM_RT_ENTRIES 32
+
+#define WITH_ASCII 1
+
+#define PROCESS_CONF_NUMEVENTS 32
+#define PROCESS_CONF_STATS 0
+/*#define PROCESS_CONF_FASTPOLL    4*/
+
+/* include the project config */
+/* PROJECT_CONF_H might be defined in the project Makefile */
+#ifdef PROJECT_CONF_H
+#include PROJECT_CONF_H
+#endif /* PROJECT_CONF_H */
+
+#endif /* CONTIKI_CONF_H */

@@ -1,5 +1,7 @@
 /*
- * Copyright (c) 2006, Swedish Institute of Computer Science.
+ * Copyright (c) 2010, Andrea Cannavicci + Stefano Pagnottelli
+ * CBL Electronics srl + Siralab srl
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,38 +28,45 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * This file is part of the Contiki operating system.
+ *
  *
  */
+#ifndef __ADC_H__
+#define __ADC_H__
 
-/**
- * \file
- *         A very simple Contiki application showing how Contiki programs look
- * \author
- *         Adam Dunkels <adam@sics.se>
- */
+#define DIRTY               0x10
+#define HIGH_PRIORITY_LOCK  0x01
+#define LOW_PRIORITY_LOCK   0x02
 
-#include "contiki.h"
-#include "serial-line.h"
-#include "dev/button-sensor.h"
+uint8_t getAdcStatus();
 
-#include <stdio.h> /* For printf() */
-/*---------------------------------------------------------------------------*/
-PROCESS(hello_world_process, "Hello world process");
-AUTOSTART_PROCESSES(&hello_world_process);
-/*---------------------------------------------------------------------------*/
-PROCESS_THREAD(hello_world_process, ev, data)
-{
-  PROCESS_BEGIN();
+#define MSP430_ADC_CH_BIT 0
+typedef enum _MSP430_ADC_CH{
+	ADC_CH0 = 0 << MSP430_ADC_CH_BIT,
+	ADC_CH1 = 1 << MSP430_ADC_CH_BIT,
+	ADC_CH2 = 2 << MSP430_ADC_CH_BIT,
+	ADC_CH3 = 3 << MSP430_ADC_CH_BIT,
+	ADC_CH4 = 4 << MSP430_ADC_CH_BIT,
+	ADC_CH5 = 5 << MSP430_ADC_CH_BIT,
+	ADC_CH6 = 6 << MSP430_ADC_CH_BIT,
+	ADC_CH7 = 7 << MSP430_ADC_CH_BIT,
+	ADC_CH8 = 8 << MSP430_ADC_CH_BIT,
+	ADC_CH9 = 9 << MSP430_ADC_CH_BIT,
+	ADC_CH10 = 10 << MSP430_ADC_CH_BIT,
+	ADC_CH11 = 11 << MSP430_ADC_CH_BIT,
+	ADC_CH12 = 12 << MSP430_ADC_CH_BIT,
+	ADC_CH13 = 13 << MSP430_ADC_CH_BIT,
+	ADC_CH14 = 14 << MSP430_ADC_CH_BIT,
+	ADC_CH15 = 15 << MSP430_ADC_CH_BIT,
+} ADC_CH;
 
-  SENSORS_ACTIVATE(button_sensor);
 
-  while(1) {
-    printf("wait...\n");
-    PROCESS_WAIT_EVENT();
-    if(ev == serial_line_event_message) printf("data: '%s'\n", data);
-    else printf("button pressed!\n");
-  }
-  PROCESS_END();
-}
-/*---------------------------------------------------------------------------*/
+void adc_init();
+uint8_t  start_adc(ADC_CH channel); // start  adc a bassa priorità
+uint8_t checkAdcBusy();     // verifica dello stato dell'ADC
+uint16_t getAdcSample();     // lettura del dato campionato
+
+uint16_t get_adc(ADC_CH channel); //Misure singola dell'adc ad alta priorità
+void     adcOff();
+
+#endif /* __ADC_H__ */

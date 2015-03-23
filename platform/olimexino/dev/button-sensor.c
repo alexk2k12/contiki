@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Swedish Institute of Computer Science.
+ * Copyright (c) 2005, Swedish Institute of Computer Science
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,35 +29,75 @@
  * This file is part of the Contiki operating system.
  *
  */
-
-/**
- * \file
- *         A very simple Contiki application showing how Contiki programs look
- * \author
- *         Adam Dunkels <adam@sics.se>
- */
-
 #include "contiki.h"
-#include "serial-line.h"
+#include "lib/sensors.h"
+#include "dev/hwconf.h"
 #include "dev/button-sensor.h"
+#include "isr_compat.h"
 
-#include <stdio.h> /* For printf() */
+const struct sensors_sensor button_sensor;
+
+static struct timer debouncetimer;
+static int status(int type);
+
+HWCONF_PIN(BUTTON, 2, 0);
+HWCONF_IRQ(BUTTON, 2, 0);
+
 /*---------------------------------------------------------------------------*/
-PROCESS(hello_world_process, "Hello world process");
-AUTOSTART_PROCESSES(&hello_world_process);
-/*---------------------------------------------------------------------------*/
-PROCESS_THREAD(hello_world_process, ev, data)
+ISR(PORT2, irq_p2)
 {
-  PROCESS_BEGIN();
+  ENERGEST_ON(ENERGEST_TYPE_IRQ);
 
-  SENSORS_ACTIVATE(button_sensor);
-
-  while(1) {
-    printf("wait...\n");
-    PROCESS_WAIT_EVENT();
-    if(ev == serial_line_event_message) printf("data: '%s'\n", data);
-    else printf("button pressed!\n");
+  if(BUTTON_CHECK_IRQ()) {
+    if(timer_expired(&debouncetimer)) {
+      timer_set(&debouncetimer, CLOCK_SECOND / 4);
+      sensors_changed(&button_sensor);
+      LPM4_EXIT;
+    }
   }
-  PROCESS_END();
+  P2IFG = 0x00;
+  ENERGEST_OFF(ENERGEST_TYPE_IRQ);
 }
 /*---------------------------------------------------------------------------*/
+static int
+value(int type)
+{
+  return BUTTON_READ() || !timer_expired(&debouncetimer);
+}
+/*---------------------------------------------------------------------------*/
+static int
+configure(int type, int c)
+{
+  switch (type) {
+  case SENSORS_ACTIVE:
+    if (c) {
+      if(!status(SENSORS_ACTIVE)) {
+	timer_set(&debouncetimer, 0);
+	BUTTON_IRQ_EDGE_SELECTD();
+
+	BUTTON_SELECT();
+	BUTTON_MAKE_INPUT();
+
+	BUTTON_ENABLE_IRQ();
+      }
+    } else {
+      BUTTON_DISABLE_IRQ();
+    }
+    return 1;
+  }
+  return 0;
+}
+/*---------------------------------------------------------------------------*/
+static int
+status(int type)
+{
+  switch (type) {
+  case SENSORS_ACTIVE:
+  case SENSORS_READY:
+    return BUTTON_IRQ_ENABLED();
+  }
+  return 0;
+}
+/*---------------------------------------------------------------------------*/
+SENSORS_SENSOR(button_sensor, BUTTON_SENSOR,
+	       value, configure, status);

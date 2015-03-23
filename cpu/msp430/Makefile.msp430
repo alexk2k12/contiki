@@ -32,7 +32,7 @@ endif
 
 CONTIKI_CPU_DIRS = $(CONTIKI_CPU_FAM_DIR) . dev
 
-MSP430     = msp430.c flash.c clock.c leds.c leds-arch.c \
+MSP430     = msp430.c clock.c leds.c leds-arch.c \
              watchdog.c lpm.c mtarch.c rtimer-arch.c
 UIPDRIVERS = me.c me_tabs.c slip.c crc16.c
 ELFLOADER  = elfloader.c elfloader-msp430.c symtab.c
@@ -64,7 +64,7 @@ IAR_PATH_C := $(shell dirname "$(IAR_BIN_PATH)")
 IAR_PATH := $(shell cygpath -m "$(IAR_PATH_C)")
 endif
 
-CFLAGS += --diag_suppress=Pa050 --silent
+#CFLAGS += --diag_suppress=Pa050 --silent
 
 #defaults on the MSP430X core include file here (xlfn.h)
 ifndef CFLAGSNO
@@ -151,17 +151,23 @@ ifneq (,$(findstring 4.7.,$(shell msp430-gcc -dumpversion)))
 ifdef CPU_HAS_MSP430X
   TARGET_MEMORY_MODEL ?= medium
   CFLAGS += -mmemory-model=$(TARGET_MEMORY_MODEL)
-  CFLAGS += -ffunction-sections -fdata-sections -mcode-region=any
+  CFLAGS +=  -mcode-region=any
   LDFLAGS += -mmemory-model=$(TARGET_MEMORY_MODEL) -Wl,-gc-sections
 endif
 endif
 endif
+
+#include these always.
+CFLAGS += -ffunction-sections -fdata-sections -fpack-struct
 
 ifndef CFLAGSNO
 CFLAGSNO = -Wall -mmcu=$(CC_MCU) $(CFLAGSWERROR)
 endif
 CFLAGS  += -Os -fno-strict-aliasing
 LDFLAGS += -mmcu=$(CC_MCU) -Wl,-Map=contiki-$(TARGET).map
+
+# make sure msp430f5510.h is included.
+CFLAGS += -include msp430f5510.h
 
 ### These flags can reduce the code size and RAM usage with up to 10%
 ifeq ($(SMALL),1)
