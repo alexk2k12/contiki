@@ -105,7 +105,8 @@ ifndef BOOTLOADER_START
 endif
 
 LDFLAGS  += -mmcu=$(MCU) -Wl,-Map=contiki-$(TARGET).map \
-           -Wl,--section-start=.bootloader=$(BOOTLOADER_START)
+           -Wl,--section-start=.bootloader=$(BOOTLOADER_START) \
+	   -Wl,--section-start=.data=0x808000
 
 SMALL ?= 1
 

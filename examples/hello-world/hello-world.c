@@ -39,7 +39,7 @@
 
 #include "contiki.h"
 #include "serial-line.h"
-#include "dev/button-sensor.h"
+//#include "dev/button-sensor.h"
 
 #include <stdio.h> /* For printf() */
 /*---------------------------------------------------------------------------*/
@@ -50,7 +50,7 @@ PROCESS_THREAD(hello_world_process, ev, data)
 {
   PROCESS_BEGIN();
 
-  SENSORS_ACTIVATE(button_sensor);
+//  SENSORS_ACTIVATE(button_sensor);
 
   while(1) {
     printf("wait...\n");

@@ -53,6 +53,8 @@
 
 void init_lowlevel(void);
 void init_net(void);
+int putchar_ftdi(char c);
 
+//FILE ftdi_io; // = FDEV_SETUP_STREAM(putchar_ftdi, NULL, _FDEV_SETUP_WRITE); 
 
 #endif /* #ifndef CONTIKI_RAVEN_H_ */

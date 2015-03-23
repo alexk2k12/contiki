@@ -57,12 +57,12 @@
 #include "contiki-net.h"
 #include "contiki-lib.h"
 
-#include "dev/rs232.h"
+//#include "dev/rs232.h"
 #include "dev/serial-line.h"
 #include "dev/slip.h"
 
-
 #include "sicslowmac.h"
+#include "contiki-rcb.h"
 
 FUSES =
 	{
@@ -89,6 +89,7 @@ PROCINIT(&etimer_process, &mac_process, &rcb_leds);
 
 /* Put default MAC address in EEPROM */
 uint8_t mac_address[8] EEMEM = {0x02, 0x11, 0x22, 0xff, 0xfe, 0x33, 0x44, 0x55};
+FILE ftdi_io = FDEV_SETUP_STREAM(putchar_ftdi, NULL, _FDEV_SETUP_WRITE); 
 
 #define LED1 (1<<PE2)
 #define LED2 (1<<PE3)
@@ -97,21 +98,32 @@ uint8_t mac_address[8] EEMEM = {0x02, 0x11, 0x22, 0xff, 0xfe, 0x33, 0x44, 0x55};
 #define LEDOff(x) (PORTE |= (x))
 #define LEDOn(x) (PORTE &= ~(x))
 
-
 void
 init_lowlevel(void)
 {
-  /* Second rs232 port for debugging */
-  rs232_init(RS232_PORT_1, USART_BAUD_57600,
-             USART_PARITY_NONE | USART_STOP_BITS_1 | USART_DATA_BITS_8);
+//  /* Second rs232 port for debugging */
+//  rs232_init(RS232_PORT_1, USART_BAUD_57600,
+//             USART_PARITY_NONE | USART_STOP_BITS_1 | USART_DATA_BITS_8);
+//
+//  /* Redirect stdout to second port */
+//  rs232_redirect_stdout(RS232_PORT_1);
 
-  /* Redirect stdout to second port */
-  rs232_redirect_stdout(RS232_PORT_1);
-  
+  //set up ftdi serial.
+  XMCRA |= 0x80;
+  stdout = &ftdi_io;
+
+  //set up an interrupt
+  EICRB &= ~(0x80); //ISC71 = 0
+  EICRB |= 0x40;    //ISC70 = 1
+  EIMSK |= 0x80;    //Enable this interrupt mask
+  DDRE &= ~0x80;     //Set this port as an input
+  sei();
+
+  //set up transmit enable port
+  DDRE &= ~0x40;
+
   DDRE |= LED1 | LED2 | LED3;
   
-  ctimer_init();
- 
 }
 
 
@@ -144,13 +156,20 @@ main(void)
 {
   /* Initialize hardware */
   init_lowlevel();  
-  /* Clock */
-  clock_init();
-  LEDOff(LED1 | LED2);
 
   /* Process subsystem */
-  process_init();
+  printf("\n********BOOTING CONTIKI*********\n");
+  printf("System online.\n");
 
+  process_init();
+  /* Clock */
+  LEDOff(LED1) ;
+
+  /* Be sure the process subsystem is initialized apriori */
+  serial_line_init();
+  clock_init();
+  ctimer_init();
+ 
   /* Register initial processes */
   procinit_init();
   
@@ -169,9 +188,6 @@ main(void)
 
   /* Autostart processes */
   autostart_start(autostart_processes);
-  
-  printf_P(PSTR("\n********BOOTING CONTIKI*********\n"));
-  printf_P(PSTR("System online.\n"));
 
   /* Main scheduler loop */
   while(1) {
@@ -180,3 +196,18 @@ main(void)
 
   return 0;
 }
+
+int putchar_ftdi(char c) {
+  char* p = (char*)0x2200;
+  //if((PINE & 0x80) != 0) *p = c;
+  *p = c;
+  return 0;
+}
+
+ISR(INT7_vect, ISR_BLOCK) {
+  char *p = (char*)0x2200;
+  while((PINE & 0x80) == 0) serial_line_input_byte(*p);
+  //while((PINE & 0x80) == 0) printf("%c", *p);
+  //printf("\n");
+}
+
