@@ -1,19 +1,35 @@
-The Contiki Operating System
-============================
+Fork of Contiki OS from Colibri (https://github.com/persuader72/contiki) for the Olimexino5510 platform:
+https://www.olimex.com/Products/Duino/MSP430/OLIMEXINO-5510/open-source-hardware
 
-[![Build Status](https://secure.travis-ci.org/contiki-os/contiki.png)](http://travis-ci.org/contiki-os/contiki)
+ - MSP430F5510 MCU with USB/printf support via the msp430 USB API, ported to work with msp430-gcc (https://github.com/jlhonora/usb-mspgcc/tree/master/src)
 
-Contiki is an open source operating system that runs on tiny low-power
-microcontrollers and makes it possible to develop applications that
-make efficient use of the hardware while providing standardized
-low-power wireless communication for a range of hardware platforms.
+Changes:
+ - Removed external flash code (based on AT25F512B)
+ - Removed MRF49XA radio code.
+ - Changed Makefiles:
+  - remove -fstack-check (which seemed to stop the device from enumerating as a USB device)
+  - Compile with -Os to squeeze program size.
+  - By default programs using python msp430-bsl library (https://github.com/cetic/python-msp430-tools)
+  
+Planned:
+ - Add support for the MOD-MRF24J40 IEEE 802.15.4 radio.
+ 
+To compile:
+```
+make hello-world.ihex
+ ```
 
-Contiki is used in numerous commercial and non-commercial systems,
-such as city sound monitoring, street lights, networked electrical
-power meters, industrial monitoring, radiation monitoring,
-construction site monitoring, alarm systems, remote house monitoring,
-and so on.
+To upload (make sure the python bsl library is installed).
+```
+make hello-world.upload
+```
 
-For more information, see the Contiki website:
+To login to serial port:
+```
+make login
+```
 
-[http://contiki-os.org](http://contiki-os.org)
+Or specify the port:
+```
+make [port].login
+```

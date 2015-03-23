@@ -85,12 +85,16 @@ uart1_init(unsigned long ubr)
   /* UCA1MCTL |= UCBRS_2 + UCBRF_0;            // Modulation UCBRFx=0 */
   UCA1MCTL = UCBRS_3;             /* Modulation UCBRSx = 3 */
 
+#if defined (__MSP430F5308) || defined (__MSP430F5310)
+  P4SEL |= BIT4|BIT5;  // P4.5 4.6 = USCI_A1 TXD/RXD
+#else
   P4DIR |= BIT5;
   P4OUT |= BIT5 ;
   P5SEL |= BIT6|BIT7;  // P5.6,7 = USCI_A1 TXD/RXD
 
   P4SEL |= BIT7;
   P4DIR |= BIT7;
+#endif
 
   /*UCA1CTL1 &= ~UCSWRST;*/       /* Initialize USCI state machine */
 
@@ -103,6 +107,8 @@ uart1_init(unsigned long ubr)
   UCA1CTL1 &= ~UCSWRST;                   /* Initialize USCI state machine **before** enabling interrupts */
   UCA1IE |= UCRXIE;                        /* Enable UCA1 RX interrupt */
 }
+
+
 /*---------------------------------------------------------------------------*/
 ISR(USCI_A1, uart1_rx_interrupt)
 {

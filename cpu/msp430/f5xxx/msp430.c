@@ -30,7 +30,6 @@
  */
 #include "contiki.h"
 #include "dev/watchdog.h"
-
 /* dco_required set to 1 will cause the CPU not to go into
    sleep modes where the DCO clock stopped */
 int msp430_dco_required;
@@ -38,6 +37,86 @@ int msp430_dco_required;
 #if defined(__MSP430__) && defined(__GNUC__)
 #define asmv(arg) __asm__ __volatile__(arg)
 #endif
+
+void SetVcoreUp (unsigned int level)
+{
+  // Open PMM registers for write
+  PMMCTL0_H = PMMPW_H;
+  // Set SVS/SVM high side new level
+  SVSMHCTL = SVSHE | SVSHRVL0 * level | SVMHE | SVSMHRRL0 * level;
+  // Set SVM low side to new level
+  SVSMLCTL = SVSLE | SVMLE | SVSMLRRL0 * level;
+  // Wait till SVM is settled
+  while ((PMMIFG & SVSMLDLYIFG) == 0);
+  // Clear already set flags
+  PMMIFG &= ~(SVMLVLRIFG | SVMLIFG);
+  // Set VCore to new level
+  PMMCTL0_L = PMMCOREV0 * level;
+  // Wait till new level reached
+  if ((PMMIFG & SVMLIFG))
+    while ((PMMIFG & SVMLVLRIFG) == 0);
+  // Set SVS/SVM low side to new level
+  SVSMLCTL = SVSLE | SVSLRVL0 * level | SVMLE | SVSMLRRL0 * level;
+  // Lock PMM registers for write access
+  PMMCTL0_H = 0x00;
+}
+
+void msp430f53xx_init_dco(void)
+{
+	  UCSCTL3 |= SELREF_2;                      // Set DCO FLL reference = REFO
+	  UCSCTL4 |= SELA_2;                        // Set ACLK = VLO
+
+	  // Increase Vcore setting to level1 to support fsystem=12MHz
+	  // NOTE: Change core voltage one level at a time..
+	  SetVcoreUp (0x01);
+	  //SetVCore(3);
+
+	  // Initialize DCO to 12MHz
+	  //__bis_SR_register(SCG0);                  // Disable the FLL control loop
+	  #ifdef __IAR_SYSTEMS_ICC__
+	    __bis_SR_register(SCG0);
+	  #else
+	    asmv("bis %0, r2" : : "i" (SCG0));
+	  #endif
+
+
+	  UCSCTL0 = 0x0000;                         // Set lowest possible DCOx, MODx
+	  UCSCTL1 = DCORSEL_6;                      // Select DCO range 24MHz operation
+	  UCSCTL2 = FLLD_1 | 224;                   // Set DCO Multiplier for 7.3728MHz
+												// (N + 1) * FLLRef = Fdco
+												// (224 + 1) * 32768 = 7.3728MHz
+												// Set FLL Div = fDCOCLK/2
+	  //__bic_SR_register(SCG0);                // Enable the FLL control loop
+	  #ifdef __IAR_SYSTEMS_ICC__
+	    __bic_SR_register(SCG0);
+	  #else
+	    asmv("bic %0, r2" : : "i" (SCG0));
+	  #endif
+
+	  // Worst-case settling time for the DCO when the DCO range bits have been
+	  // changed is n x 32 x 32 x f_MCLK / f_FLL_reference. See UCS chapter in 5xx
+	  // UG for optimization.
+	  // 32 x 32 x 12 MHz / 32,768 Hz = 375000 = MCLK cycles for DCO to settle
+	  __delay_cycles(375000);
+
+	  // Loop until XT1,XT2 & DCO fault flag is cleared
+	  do
+	  {
+		UCSCTL7 &= ~(XT2OFFG | XT1LFOFFG | DCOFFG);
+												// Clear XT2,XT1,DCO fault flags
+		SFRIFG1 &= ~OFIFG;                      // Clear fault flags
+	  }while (SFRIFG1&OFIFG);                   // Test oscillator fault flag
+
+
+	  PMAPPWD = 0x02D52;                        // Enable Write-access to modify port mapping registers
+	  P4MAP7 = PM_MCLK;
+	  PMAPPWD = 0;                              // Disable Write-Access to modify port mapping registers
+
+	  P4SEL |= BIT7;
+	  P4DIR |= BIT7;   // MCLK set out to pins
+
+}
+
 /*---------------------------------------------------------------------------*/
 void
 msp430_init_dco(void)
@@ -126,6 +205,10 @@ init_ports(void)
 
   P1IE = 0;
   P2IE = 0;
+
+  /*LDOKEYPID = LDOKEY;
+  LDOPWRCTL = 0;
+  LDOKEYPID = 0 ;*/
 }
 /*---------------------------------------------------------------------------*/
 /* msp430-ld may align _end incorrectly. Workaround in cpu_init. */
@@ -162,7 +245,11 @@ msp430_cpu_init(void)
   dint();
   watchdog_init();
   init_ports();
+#ifdef CONTIKI_TARGET_COLIBRI
+  msp430f53xx_init_dco();
+#else
   msp430_init_dco();
+#endif
   eint();
 #if defined(__MSP430__) && defined(__GNUC__)
   if((uintptr_t)cur_break & 1) { /* Workaround for msp430-ld bug! */
