@@ -92,14 +92,15 @@ void clock_adjust_ticks(clock_time_t howmany);
 #define CCIF
 #define CLIF
 
-#define LINKADDR_CONF_SIZE       8
+#define LINKADDR_CONF_SIZE       2
 #define PACKETBUF_CONF_HDR_SIZE    48	/* Choose a buffersize != 0 for the messages which should be sended over the wireless interface */
 
 /* Uncomment this lines to activate the specific drivers */
 //#define NETSTACK_CONF_NETWORK     rime_driver		
-//#define NETSTACK_CONF_MAC         nullmac_driver
+#define NETSTACK_CONF_MAC         nullmac_driver
+#define NETSTACK_CONF_RDC	nullrdc_driver
 //#define NETSTACK_CONF_RDC         sicslowmac_driver	
-//#define NETSTACK_CONF_FRAMER      framer_802154	/* Framer for 802.15.4 Medium Access Control */
+#define NETSTACK_CONF_FRAMER      framer_802154	/* Framer for 802.15.4 Medium Access Control */
 #define NETSTACK_CONF_RADIO       rf230_driver		/* Select the wireless driver, otherwise contiki would operate with the "nulldriver" which does nothing */
 
 #define RF230_CONF_AUTOACK        1

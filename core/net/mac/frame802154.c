@@ -209,15 +209,19 @@ frame802154_create(frame802154_t *p, uint8_t *buf)
   buf[2] = p->seq;
   pos = 3;
 
-  /* Destination PAN ID */
+  /* Destination PAN ID */ /* Ordering: [lsb msb] */
   if(flen.dest_pid_len == 2) {
     buf[pos++] = p->dest_pid & 0xff;
     buf[pos++] = (p->dest_pid >> 8) & 0xff;
   }
 
-  /* Destination address */
-  for(c = flen.dest_addr_len; c > 0; c--) {
-    buf[pos++] = p->dest_addr[c - 1];
+//  /* Destination address */ /* ordering: [msb lsb] */
+//  for(c = flen.dest_addr_len; c > 0; c--) { 
+//    buf[pos++] = p->dest_addr[c - 1];
+//  }
+  /* Destination address, encoded little endian.. */
+  for(c = 0;c < flen.dest_addr_len; c++) {
+    buf[pos++] = p->dest_addr[c];
   }
 
   /* Source PAN ID */
@@ -226,10 +230,15 @@ frame802154_create(frame802154_t *p, uint8_t *buf)
     buf[pos++] = (p->src_pid >> 8) & 0xff;
   }
 
-  /* Source address */
-  for(c = flen.src_addr_len; c > 0; c--) {
-    buf[pos++] = p->src_addr[c - 1];
+//  /* Source address */
+//  for(c = flen.src_addr_len; c > 0; c--) {
+//    buf[pos++] = p->src_addr[c - 1];
+//  }
+  /* Destination address, encoded little endian.. */
+  for(c = 0;c < flen.src_addr_len; c++) {
+    buf[pos++] = p->src_addr[c];
   }
+
 
 #if LLSEC802154_SECURITY_LEVEL
   /* Aux header */
@@ -312,8 +321,8 @@ frame802154_parse(uint8_t *data, int len, frame802154_t *pf)
 /*     p += l; */
     if(fcf.dest_addr_mode == FRAME802154_SHORTADDRMODE) {
       linkaddr_copy((linkaddr_t *)&(pf->dest_addr), &linkaddr_null);
-      pf->dest_addr[0] = p[1];
-      pf->dest_addr[1] = p[0];
+      pf->dest_addr[0] = p[0];
+      pf->dest_addr[1] = p[1];
       p += 2;
     } else if(fcf.dest_addr_mode == FRAME802154_LONGADDRMODE) {
       for(c = 0; c < 8; c++) {

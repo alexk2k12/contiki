@@ -3,5 +3,9 @@ all: $(CONTIKI_PROJECT)
 
 TARGET=avr-rcb
 
-CONTIKI = ../..
+ifdef nodeid
+CFLAGS += -DNODEID=$(nodeid)
+endif
+
+CONTIKI = ../../..
 include $(CONTIKI)/Makefile.include

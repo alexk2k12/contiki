@@ -34,8 +34,10 @@
 #include <avr/pgmspace.h>
 #include <avr/fuse.h>
 #include <avr/eeprom.h>
+#include <eeprom.h>
 #include <stdio.h>
 
+#include "linkaddr.h"
 #include "lib/mmem.h"
 #include "loader/symbols-def.h"
 #include "loader/symtab.h"
@@ -150,6 +152,35 @@ PROCESS_THREAD(rcb_leds, ev, data)
   PROCESS_END();
 }
 
+/* 
+ * Try to read an address from EEPROM, otherwise use default short address: 0x1234
+ * Set the PAN ID in the radio to 0xABCD, and the short address.
+ * Set the rime address (if rime is being used) to the short address
+*/
+#ifndef EEPROM_ADDR_LOC
+#define EEPROM_ADDR_LOC 0x0000
+#endif
+int init_addresses() {
+  short int addr;
+  printf("reading address from location in eeprom: 0x%x\n", EEPROM_ADDR_LOC);
+  eeprom_read((eeprom_addr_t)0, (unsigned char*)&addr, sizeof(addr));
+  
+  if(addr == 0){
+    printf("No address in EEPROM, using 0x1234 and PAN ID 0xabcd\n");
+    addr = 0x1234;
+  }
+  else {
+    printf("Address found in EEPROM: 0x%x\n", addr);
+  }
+  
+  //set it in the radio..
+  rf230_set_pan_addr(0xABCD, (unsigned short) addr, NULL);
+ 
+  //set it in software..
+  linkaddr_set_node_addr((linkaddr_t*)&addr);
+
+  return 0;
+}
 
 int
 main(void)
@@ -164,6 +195,9 @@ main(void)
   process_init();
   /* Clock */
   LEDOff(LED1) ;
+
+  //initializing the rtimer module.
+  rtimer_init();
 
   /* Be sure the process subsystem is initialized apriori */
   serial_line_init();
@@ -185,6 +219,9 @@ main(void)
   NETSTACK_RDC.init();
   NETSTACK_MAC.init();
   NETSTACK_NETWORK.init();
+  printf("RDC: %s. MAC: %s.\n", NETSTACK_RDC.name, NETSTACK_MAC.name);
+
+  init_addresses();
 
   /* Autostart processes */
   autostart_start(autostart_processes);

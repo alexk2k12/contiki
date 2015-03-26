@@ -64,6 +64,8 @@
 #define NULLRDC_ADDRESS_FILTER 1
 #endif /* NULLRDC_CONF_ADDRESS_FILTER */
 
+// NullRDC will now listen for an acknowledgment.
+#define NULLRDC_802154_AUTOACK 1
 #ifndef NULLRDC_802154_AUTOACK
 #ifdef NULLRDC_CONF_802154_AUTOACK
 #define NULLRDC_802154_AUTOACK NULLRDC_CONF_802154_AUTOACK
@@ -72,6 +74,7 @@
 #endif /* NULLRDC_CONF_802154_AUTOACK */
 #endif /* NULLRDC_802154_AUTOACK */
 
+#define NULLRDC_802154_AUTOACK_HW 1
 #ifndef NULLRDC_802154_AUTOACK_HW
 #ifdef NULLRDC_CONF_802154_AUTOACK_HW
 #define NULLRDC_802154_AUTOACK_HW NULLRDC_CONF_802154_AUTOACK_HW
@@ -134,8 +137,8 @@ send_one_packet(mac_callback_t sent, void *ptr)
 
     is_broadcast = packetbuf_holds_broadcast();
 
-    if(NETSTACK_RADIO.receiving_packet() ||
-       (!is_broadcast && NETSTACK_RADIO.pending_packet())) {
+    if(NETSTACK_RADIO.receiving_packet() || (!is_broadcast && NETSTACK_RADIO.pending_packet())) {
+       PRINTF("collision... pending? %d\n", NETSTACK_RADIO.pending_packet());
 
       /* Currently receiving a packet over air or the radio has
          already received a packet that needs to be read before
@@ -164,9 +167,7 @@ send_one_packet(mac_callback_t sent, void *ptr)
           }
 
           ret = MAC_TX_NOACK;
-          if(NETSTACK_RADIO.receiving_packet() ||
-             NETSTACK_RADIO.pending_packet() ||
-             NETSTACK_RADIO.channel_clear() == 0) {
+          if(NETSTACK_RADIO.receiving_packet() || NETSTACK_RADIO.pending_packet() || NETSTACK_RADIO.channel_clear() == 0) {
             int len;
             uint8_t ackbuf[ACK_LEN];
 
@@ -186,6 +187,7 @@ send_one_packet(mac_callback_t sent, void *ptr)
               len = NETSTACK_RADIO.read(ackbuf, ACK_LEN);
               if(len == ACK_LEN && ackbuf[2] == dsn) {
                 /* Ack received */
+  		PRINTF("Ackknowedlgement recieved!\n");
                 RIMESTATS_ADD(ackrx);
                 ret = MAC_TX_OK;
               } else {
@@ -264,6 +266,7 @@ send_list(mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list)
 static void
 packet_input(void)
 {
+  PRINTF("NullRDC packet in: %d\n", packetbuf_datalen());
   int original_datalen;
   uint8_t *original_dataptr;
 
