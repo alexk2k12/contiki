@@ -29,6 +29,8 @@ AVRDUDE_PORT=usb:00B000000D79
 # Verify off
 AVRDUDE_OPTIONS=-V
 
+%.upload: %.hex
+	avrdude -c usbasp -p atmega1281 -V -U $<
 
 include $(CONTIKIAVR)/Makefile.avr
 include $(CONTIKIAVR)/radio/Makefile.radio

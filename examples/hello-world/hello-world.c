@@ -1,6 +1,6 @@
 #include "contiki.h"
 #include "rime.h"
-
+#include "serial-line.h"
 #include "dev/button-sensor.h"
 
 #include "dev/leds.h"
@@ -29,6 +29,8 @@ PROCESS_THREAD(example_unicast_process, ev, data)
   PROCESS_BEGIN();
 
   unicast_open(&uc, 146, &unicast_callbacks);
+ 
+  PROCESS_WAIT_EVENT_UNTIL(ev == serial_line_event_message && !strcmp(data,"tx"));
 
   while(1) {
     static struct etimer et;
@@ -38,8 +40,9 @@ PROCESS_THREAD(example_unicast_process, ev, data)
     
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
 
-    packetbuf_copyfrom("Hello", 5);
-    addr.u8[0] = 1;
+    static char buffer[120];
+    packetbuf_copyfrom(buffer, 90);
+    addr.u8[0] = 5; //(linkaddr_node_addr.u8[0]==1?2:1);
     addr.u8[1] = 0;
     if(!linkaddr_cmp(&addr, &linkaddr_node_addr)) {
       unicast_send(&uc, &addr);

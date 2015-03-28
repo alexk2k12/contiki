@@ -66,12 +66,12 @@
 #include "sicslowmac.h"
 #include "contiki-rcb.h"
 
-FUSES =
-	{
-		.low = 0xe2,
-		.high = 0x99,
-		.extended = 0xff,
-	};
+//FUSES =
+//	{
+//		.low = 0xe2,
+//		.high = 0x99,
+//		.extended = 0xff,
+//	};
 	
 PROCESS(rcb_leds, "RCB leds process");
 
@@ -110,6 +110,10 @@ init_lowlevel(void)
 //  /* Redirect stdout to second port */
 //  rs232_redirect_stdout(RS232_PORT_1);
 
+  DDRE |= LED1 | LED2 | LED3;
+  LEDOff(LED1|LED2|LED2);
+  LEDOn(LED1);
+
   //set up ftdi serial.
   XMCRA |= 0x80;
   stdout = &ftdi_io;
@@ -123,9 +127,6 @@ init_lowlevel(void)
 
   //set up transmit enable port
   DDRE &= ~0x40;
-
-  DDRE |= LED1 | LED2 | LED3;
-  
 }
 
 
@@ -143,10 +144,9 @@ PROCESS_THREAD(rcb_leds, ev, data)
 #else
  		if (1) {
 #endif        
-		LEDOn(LED2);
-		etimer_set(&et, CLOCK_SECOND/10);
+//		etimer_set(&et, CLOCK_SECOND/10);
 	  } else {
-		LEDOff(LED2);
+//		LEDOff(LED2);
 	  }
     }
   PROCESS_END();
@@ -191,10 +191,10 @@ main(void)
   /* Process subsystem */
   printf("\n********BOOTING CONTIKI*********\n");
   printf("System online.\n");
+  LEDOn(LED2);
 
   process_init();
   /* Clock */
-  LEDOff(LED1) ;
 
   //initializing the rtimer module.
   rtimer_init();
@@ -225,6 +225,8 @@ main(void)
 
   /* Autostart processes */
   autostart_start(autostart_processes);
+
+  LEDOn(LED3);
 
   /* Main scheduler loop */
   while(1) {

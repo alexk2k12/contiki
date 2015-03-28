@@ -986,12 +986,21 @@ rf230_transmit(unsigned short payload_len)
 #if RADIOSTATS
   RF230_sendpackets++;
 #endif
- 
+
+#define RF230_DCCA_TX 1
+#ifdef RF230_DCCA_TX
+  while(hal_subregister_read(SR_TRX_STATUS) == BUSY_TX) {
+    set_txpower(9);
+    delay_us(450);
+    set_txpower(15);
+    delay_us(450);
+  }
+#else
  /* We wait until transmission has ended so that we get an
      accurate measurement of the transmission time.*/
   rf230_waitidle();
-
-
+#endif
+ 
 #if RF230_CONF_AUTOACK
 #ifdef RF230_LISTENACK_AFTER_TX
 /*
@@ -1305,7 +1314,8 @@ if (RF230_receive_on) {
   interrupt_time_set = 1;
 #endif /* RF230_CONF_TIMESTAMPS */
 
-  process_poll(&rf230_process);
+  /* If the frame is an ACK, do not poll the rf230 process. Instead leave higher layers to call pending(), and read() */
+  if(rxframe[rxframe_head].length!=5 && !(rxframe[rxframe_head].data[0] & 0x02)) process_poll(&rf230_process);
    
   rf230_pending = 1;
   
@@ -1578,7 +1588,10 @@ rf230_get_txpower(void)
 uint8_t
 rf230_get_raw_rssi(void)
 {
-  uint8_t rssi,state;
+  #define BASE -91
+
+  unsigned char state;
+  signed char rssi;
   bool radio_was_off = 0;
 
   /*The RSSI measurement should only be done in RX_ON or BUSY_RX.*/
@@ -1591,17 +1604,10 @@ rf230_get_raw_rssi(void)
 /* The rssi register is multiplied by 3 to a consistent value from either register */
   state=radio_get_trx_state();
   if ((state==RX_AACK_ON) || (state==BUSY_RX_AACK)) {
- //  rssi = hal_subregister_read(SR_ED_LEVEL);  //0-84, resolution 1 dB
      rssi = hal_register_read(RG_PHY_ED_LEVEL);  //0-84, resolution 1 dB
   } else {
-#if 0   // 3-clock shift and add is faster on machines with no hardware multiply
-/* avr-gcc may have an -Os bug that uses the general subroutine for multiplying by 3 */
-     rssi = hal_subregister_read(SR_RSSI);      //0-28, resolution 3 dB
-     rssi = (rssi << 1)  + rssi;                //*3
-#else  // 1 or 2 clock multiply, or compiler with correct optimization
-     rssi = 3 * hal_subregister_read(SR_RSSI);
-#endif
-
+     rssi = (hal_subregister_read(SR_RSSI));
+     rssi = (rssi==0?BASE:BASE+(3*(rssi-1)));
   }
 
   if(radio_was_off) {
